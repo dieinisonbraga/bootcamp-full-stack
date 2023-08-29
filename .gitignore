@@ -1,0 +1,4 @@
+/meu_app_api/__pycache__/*
+/meu_app_api/database/*
+/meu_app_api/env/*
+/meu_app_api/log/*
