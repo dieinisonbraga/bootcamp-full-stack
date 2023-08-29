@@ -4,7 +4,7 @@ from urllib.parse import unquote
 
 from sqlalchemy.exc import IntegrityError
 
-from model import Session, Produto, Comentario
+from model import Session, Produto
 from schemas import *
 from flask_cors import CORS
 
@@ -15,8 +15,6 @@ CORS(app)
 # definindo tags
 home_tag = Tag(name="Documentação", description="Seleção de documentação: Swagger, Redoc ou RapiDoc")
 produto_tag = Tag(name="Produto", description="Adição, visualização e remoção de produtos à base")
-comentario_tag = Tag(name="Comentario", description="Adição de um comentário à um produtos cadastrado na base")
-
 
 @app.get('/', tags=[home_tag])
 def home():
@@ -24,7 +22,7 @@ def home():
     """
     return redirect('/openapi')
 
-
+# POST (adiciona um novo produto)
 @app.post('/produto', tags=[produto_tag],
           responses={"200": ProdutoViewSchema, "409": ErrorSchema, "400": ErrorSchema})
 def add_produto(form: ProdutoSchema):
@@ -55,7 +53,7 @@ def add_produto(form: ProdutoSchema):
         error_msg = "Não foi possível salvar novo item :/"
         return {"mesage": error_msg}, 400
 
-
+# GET (lista de todos os produtos)
 @app.get('/produtos', tags=[produto_tag],
          responses={"200": ListagemProdutosSchema, "404": ErrorSchema})
 def get_produtos():
@@ -76,7 +74,7 @@ def get_produtos():
         print(produtos)
         return apresenta_produtos(produtos), 200
 
-
+# GET (único produto)
 @app.get('/produto', tags=[produto_tag],
          responses={"200": ProdutoViewSchema, "404": ErrorSchema})
 def get_produto(query: ProdutoBuscaSchema):
@@ -98,7 +96,7 @@ def get_produto(query: ProdutoBuscaSchema):
         # retorna a representação de produto
         return apresenta_produto(produto), 200
 
-
+# DELETE
 @app.delete('/produto', tags=[produto_tag],
             responses={"200": ProdutoDelSchema, "404": ErrorSchema})
 def del_produto(query: ProdutoBuscaSchema):
@@ -121,33 +119,3 @@ def del_produto(query: ProdutoBuscaSchema):
         # se o produto não foi encontrado
         error_msg = "Produto não encontrado na base :/"
         return {"mesage": error_msg}, 404
-
-
-@app.post('/cometario', tags=[comentario_tag],
-          responses={"200": ProdutoViewSchema, "404": ErrorSchema})
-def add_comentario(form: ComentarioSchema):
-    """Adiciona de um novo comentário à um produtos cadastrado na base identificado pelo id
-
-    Retorna uma representação dos produtos e comentários associados.
-    """
-    produto_id  = form.produto_id
-    # criando conexão com a base
-    session = Session()
-    # fazendo a busca pelo produto
-    produto = session.query(Produto).filter(Produto.id == produto_id).first()
-
-    if not produto:
-        # se produto não encontrado
-        error_msg = "Produto não encontrado na base :/"
-        return {"mesage": error_msg}, 404
-
-    # criando o comentário
-    texto = form.texto
-    comentario = Comentario(texto)
-
-    # adicionando o comentário ao produto
-    produto.adiciona_comentario(comentario)
-    session.commit()
-
-    # retorna a representação de produto
-    return apresenta_produto(produto), 200
